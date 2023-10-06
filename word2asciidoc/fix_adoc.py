@@ -7,7 +7,6 @@ from fix_angular_brackets import escape_double_angular_brackets
 from recolor_notes import recolor_notes
 from fix_the_biblio import add_anchor_to_biblio, add_link_to_biblio
 from fix_image_captions_in_adoc import use_block_tag_for_img_and_move_caption_ahead
-from fixquotesonkeywords import replace_quotes_on_keyword
 from fix_square_bracket import escape_square_brackets
 import util.helper_func as utils
 import logging
@@ -50,9 +49,6 @@ def fix_asciidoc(input_file, output_file):
 
     logging.info(f"Fix image captions")
     content = use_block_tag_for_img_and_move_caption_ahead(content)
-
-    logging.info(f"Fix the Quotes on keyword")
-    content = replace_quotes_on_keyword(content)
 
     logging.info(f"Fix square brackets")
     content = escape_square_brackets(content)
