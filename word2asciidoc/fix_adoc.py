@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 import argparse
 
-from convert_emf_images import read_emf_images, convert_emf_to_png
-from remove_pattern_from_adoc import remove_text_matching_regex
-from fix_angular_brackets import escape_double_angular_brackets
-from recolor_notes import recolor_notes
-from fix_the_biblio import add_anchor_to_biblio, add_link_to_biblio
-from fix_image_captions_in_adoc import use_block_tag_for_img_and_move_caption_ahead
-from fix_square_bracket import escape_square_brackets
+from word2asciidoc import read_emf_images, convert_emf_to_png
+from word2asciidoc import remove_text_matching_regex
+from word2asciidoc import escape_double_angular_brackets
+from word2asciidoc import recolor_notes
+from word2asciidoc import add_anchor_to_biblio, add_link_to_biblio
+from word2asciidoc import use_block_tag_for_img_and_move_caption_ahead
+from word2asciidoc import escape_square_brackets
 import util.helper_func as utils
 import logging
 
-logging.basicConfig(filename='my_log_file.log',level=logging.INFO)
+logging.basicConfig(filename='my_log_file.log', level=logging.INFO)
 
 
 def fix_asciidoc(input_file, output_file):
@@ -59,7 +59,8 @@ def fix_asciidoc(input_file, output_file):
 
 def main() -> None:
     """Execute the main routine."""
-    parser = argparse.ArgumentParser("Reads an initial generated AsciiDoc file from Word, fixes some issues and writes a new fixed AsciiDoc file")
+    parser = argparse.ArgumentParser(
+        "Reads an initial generated AsciiDoc file from Word, fixes some issues and writes a new fixed AsciiDoc file")
     parser.add_argument("-i", "--adoc_input", help="path to the initial generated AsciiDoc file", required=True)
     parser.add_argument("-o", "--adoc_output", help="path to the output file", required=True)
     parser.add_argument("-f", "--force", help="overwrite existing files", action="store_true")
@@ -78,6 +79,7 @@ def main() -> None:
         raise FileExistsError("Output path already exists and --force was not specified: {}".format(adoc_output))
 
     fix_asciidoc(adoc_input, adoc_output)
+
 
 if __name__ == '__main__':
     main()
