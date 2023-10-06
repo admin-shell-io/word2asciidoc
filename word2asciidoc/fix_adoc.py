@@ -8,7 +8,6 @@ from word2asciidoc import recolor_notes
 from word2asciidoc import add_anchor_to_biblio, add_link_to_biblio
 from word2asciidoc import use_block_tag_for_img_and_move_caption_ahead
 from word2asciidoc import escape_square_brackets
-import util.helper_func as utils
 import logging
 
 logging.basicConfig(filename='my_log_file.log', level=logging.INFO)
@@ -54,7 +53,9 @@ def fix_asciidoc(input_file, output_file):
     content = escape_square_brackets(content)
 
     logging.info(f"Write fixed content to the output file: {output_file}")
-    utils.write_file(output_file, content)
+
+    with open(output_file, 'w', encoding="utf-8") as file:
+        file.write(content)
 
 
 def main() -> None:
