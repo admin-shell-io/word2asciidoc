@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-
+import pathlib
 from word2asciidoc import read_emf_images, convert_emf_to_png
 from word2asciidoc import remove_text_matching_regex
 from word2asciidoc import escape_double_angular_brackets
@@ -10,18 +10,20 @@ from word2asciidoc import use_block_tag_for_img_and_move_caption_ahead
 from word2asciidoc import escape_square_brackets
 import logging
 
-logging.basicConfig(filename='my_log_file.log', level=logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                    handlers=[logging.FileHandler("my_log_file.log", mode='w', encoding='utf-8'),
+                              logging.StreamHandler()])
 
 
 def fix_asciidoc(input_file, output_file):
-    directory = "../AASiD_1_Metamodel"
+    directory = pathlib.Path(input_file).parent
 
     logging.info("Read the initial asciidoc file...")
     with open(input_file, 'r', encoding="utf-8") as file:
         content = file.read()
 
     logging.info("Convert the emf images in Asciidoc document to png")
-    images_to_convert = read_emf_images(directory + "/media")
+    images_to_convert = read_emf_images(directory.name + "/media")
     for image_name, image_path in images_to_convert:
         try:
             logging.info(f"Convert the emf image: {image_name}")
@@ -67,8 +69,8 @@ def main() -> None:
     parser.add_argument("-f", "--force", help="overwrite existing files", action="store_true")
     args = parser.parse_args()
 
-    adoc_input = args.adoc_input
-    adoc_output = args.adoc_output
+    adoc_input = pathlib.Path(args.adoc_input)
+    adoc_output = pathlib.Path(args.adoc_output)
     force = bool(args.force)
 
     if not adoc_input.exists():
