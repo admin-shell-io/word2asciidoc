@@ -51,8 +51,9 @@ jobs:
         path: artifact.zip
 
     - name: Comment on Issue
-      uses: actions/github-script@v6
+      uses: actions/github-script@v5
       with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
           const artifact_url = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
           github.rest.issues.createComment({
