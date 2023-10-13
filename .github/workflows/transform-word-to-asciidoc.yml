@@ -51,13 +51,12 @@ jobs:
         path: artifact.zip
 
     - name: Comment on Issue
-      uses: actions/github-script@v5
+      uses: actions/github-script@v6
       with:
         script: |
-          const issue_number = context.issue.number;
           const artifact_url = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
           github.rest.issues.createComment({
-            issue_number: issue_number,
+            issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: `🚀 The transformation is complete! You can download the AsciiDoc files [here](${artifact_url}).`
