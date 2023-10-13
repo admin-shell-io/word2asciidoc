@@ -1,0 +1,33 @@
+name: Transform Word Document to AsciiDoc
+description: Upload a Word document to have it automatically transformed into AsciiDoc format by our bot.
+title: "Transformation of Word Specification"
+labels: ["transformation-request", "automated-process", "triage"]
+assignees:
+  - octocat
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 📄 Transform Word to AsciiDoc
+        To get started, attach your Word document and submit the issue.
+        Our bot will process the file, convert it to AsciiDoc, and return a ZIP file containing the AsciiDoc documents as a comment in this issue thread.
+
+        Please ensure your document does not contain sensitive or private information as this process is automated and logs may be reviewed for debugging.
+
+  - type: textarea
+    id: word-document
+    attributes:
+      label: Attach Word Document
+      description: Attach the Word document you want to transform. Only `.docx` format is supported.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### 🔄 Processing
+        After submitting the issue, the bot will start processing your document. This might take a few minutes.
+        You'll receive a comment with the transformed document once the process is complete.
+
+        Thank you for using our Word to AsciiDoc transformation service!
