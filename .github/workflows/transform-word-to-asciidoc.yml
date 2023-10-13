@@ -40,15 +40,11 @@ jobs:
         pip install git+https://github.com/zrgt/aas_word2asciidoc.git@master
         fix_adoc --adoc_input output_folder/generated_file.adoc --adoc_output output_folder/index.adoc
 
-    - name: Package files into a zip
-      run: |
-        zip -r artifact.zip output_folder
-
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: converted-docs
-        path: artifact.zip
+        path: output_folder
 
     - name: Comment on Issue
       uses: actions/github-script@v5
@@ -60,5 +56,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: `🚀 The transformation is complete! You can download the AsciiDoc files [here](${artifact_url}).`
+            body: `🚀 The transformation is complete! You can download the AsciiDoc files under **Artifacts** [here](${artifact_url}).`
           });
