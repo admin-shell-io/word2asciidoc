@@ -32,6 +32,7 @@ setup(
     keywords='fix aas submodel asciidoc word python',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     python_requires='>=3.7',
+    install_requires=['pillow', 'wand'],
     py_modules=['word2asciidoc'],
     entry_points={
         'console_scripts': [
