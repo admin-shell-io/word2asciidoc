@@ -10,16 +10,13 @@ body:
     attributes:
       value: |
         ### 📄 Transform Word to AsciiDoc
-        To get started, attach your Word document and submit the issue.
-        Our bot will process the file, convert it to AsciiDoc, and return a ZIP file containing the AsciiDoc documents as a comment in this issue thread.
-
-        Please ensure your document does not contain sensitive or private information as this process is automated and logs may be reviewed for debugging.
+        Attach your Word document and submit. The bot will convert it to AsciiDoc and reply with a ZIP file in this thread. Ensure no sensitive/private info is in the document.
 
   - type: textarea
     id: word-document
     attributes:
       label: Attach Word Document
-      description: Attach the Word document you want to transform. Only `.docx` format is supported.
+      description: Attach the `.docx` Word file for conversion.
     validations:
       required: true
 
@@ -29,5 +26,3 @@ body:
         ### 🔄 Processing
         After submitting the issue, the bot will start processing your document. This might take a few minutes.
         You'll receive a comment with the transformed document once the process is complete.
-
-        Thank you for using our Word to AsciiDoc transformation service!

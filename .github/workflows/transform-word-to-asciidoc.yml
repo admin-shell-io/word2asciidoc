@@ -6,7 +6,7 @@ on:
 
 jobs:
   transform:
-    if: contains(github.event.issue.labels.*.name, 'word-transformation-request')
+    if: contains(github.event.issue.labels.*.name, 'transformation-request')
     runs-on: ubuntu-latest
 
     steps:
