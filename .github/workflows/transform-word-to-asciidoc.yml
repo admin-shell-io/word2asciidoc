@@ -28,7 +28,7 @@ jobs:
 
     - name: Transform Word to AsciiDoc
       run: |
-        pandoc input_file.docx -f docx -t asciidoctor --wrap=none --markdown-headings=atx --extract-media=output_folder -o output_folder/generated_file.adoc
+        pandoc input_file.docx -f docx -t asciidoctor --wrap=none --extract-media=output_folder -o output_folder/generated_file.adoc
 
     - name: Set up Python
       uses: actions/setup-python@v2
