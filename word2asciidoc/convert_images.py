@@ -1,3 +1,5 @@
+import logging
+
 from PIL import Image
 import os
 from wand.image import Image as wima
@@ -11,11 +13,8 @@ def convert_emf_to_png_with_wand(emf_file: str, png_file):
 
 def convert_emf_to_png(emf_file, png_file):
     try:
-        # Open the EMF file
         im = Image.open(emf_file)
-
-        # Save it as PNG
-        print(emf_file)
+        logging.info(f"Converting to PNG: {emf_file}")
         im.save(png_file, 'PNG')
     except OSError:
         convert_emf_to_png_with_wand(emf_file, png_file)

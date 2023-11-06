@@ -1,23 +1,18 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-from word2asciidoc import read_emf_images, convert_emf_to_png, escape_double_angular_brackets, recolor_notes, \
-    remove_text_matching_regex, use_block_tag_for_img_and_move_caption_ahead, escape_square_brackets, \
-    add_anchor_to_biblio, add_link_to_biblio
+from word2asciidoc import read_emf_images, convert_emf_to_png, escape_double_angle_brackets, recolor_notes, \
+    remove_text_by_patterns, use_block_tag_for_img_and_move_caption_ahead, escape_source_square_brackets, \
+    add_anchors_to_bibliography, add_links_to_bibliography
 import logging
 
+# Configure logging
 logging.basicConfig(level=logging.INFO,
                     handlers=[logging.FileHandler("my_log_file.log", mode='w', encoding='utf-8'),
                               logging.StreamHandler()])
 
 
-def fix_asciidoc(input_file, output_file):
-    directory = pathlib.Path(input_file).parent
-
-    logging.info("Read the initial asciidoc file...")
-    with open(input_file, 'r', encoding="utf-8") as file:
-        content = file.read()
-
+def process_images(directory, content):
     logging.info("Convert the emf images in Asciidoc document to png")
     images_to_convert = read_emf_images(directory.name + "/media")
     for image_name, image_path in images_to_convert:
@@ -28,54 +23,72 @@ def fix_asciidoc(input_file, output_file):
             content = content.replace(image_name, image_name.replace(".emf", ".png"))
         except Exception:
             logging.error(f"Could not convert the emf image: {image_name}")
+    return content
 
-    logging.info(f"Remove certain commonly occurring patterns in asciidoc file - check the script for list of patterns")
-    content = remove_text_matching_regex(content)
 
-    logging.info(f"Fix double angular brackets")
-    content = escape_double_angular_brackets(content)
+def process_content(content):
+    logging.info("Removing certain patterns in asciidoc file")
+    content = remove_text_by_patterns(content)
 
-    logging.info(f"Style note boxes")
+    logging.info("Escaping double angle brackets")
+    content = escape_double_angle_brackets(content)
+
+    logging.info("Styling note boxes")
     content = recolor_notes(content)
 
-    logging.info(f"Add anchors to bibliography")
-    keys, content = add_anchor_to_biblio(content)
+    logging.info("Adding anchors to bibliography")
+    keys, content = add_anchors_to_bibliography(content)
 
-    logging.info(f"Connect the in-document references to bibliography")
-    content = add_link_to_biblio(content, keys)
+    logging.info("Connecting in-document references to bibliography")
+    content = add_links_to_bibliography(content, keys)
 
-    logging.info(f"Fix image captions")
+    logging.info("Fixing image captions")
     content = use_block_tag_for_img_and_move_caption_ahead(content)
 
-    logging.info(f"Fix square brackets")
-    content = escape_square_brackets(content)
+    logging.info("Escaping square brackets")
+    content = escape_source_square_brackets(content)
 
-    logging.info(f"Write fixed content to the output file: {output_file}")
+    return content
 
+
+def write_output(output_file, content):
+    logging.info(f"Writing fixed content to the output file: {output_file}")
     with open(output_file, 'w', encoding="utf-8") as file:
         file.write(content)
 
 
+def fix_asciidoc(input_file, output_file):
+    directory = pathlib.Path(input_file).parent
+
+    logging.info("Read the initial asciidoc file...")
+    with open(input_file, 'r', encoding="utf-8") as file:
+        content = file.read()
+
+    content = process_images(directory, content)
+    content = process_content(content)
+    write_output(output_file, content)
+
+
 def main() -> None:
-    """Execute the main routine."""
-    parser = argparse.ArgumentParser(
-        "Reads an initial generated AsciiDoc file from Word, fixes some issues and writes a new fixed AsciiDoc file")
-    parser.add_argument("-i", "--adoc_input", help="path to the initial generated AsciiDoc file", required=True)
-    parser.add_argument("-o", "--adoc_output", help="path to the output file", required=True)
-    parser.add_argument("-f", "--force", help="overwrite existing files", action="store_true")
+    parser = argparse.ArgumentParser("Fixes issues in an AsciiDoc file generated from Word.")
+    parser.add_argument("-i", "--adoc_input", required=True,
+                        help="Path to the initial generated AsciiDoc file")
+    parser.add_argument("-o", "--adoc_output", required=True,
+                        help="Path to the output AsciiDoc file")
+    parser.add_argument("-f", "--force", action="store_true",
+                        help="Overwrite existing files without asking")
     args = parser.parse_args()
 
     adoc_input = pathlib.Path(args.adoc_input)
     adoc_output = pathlib.Path(args.adoc_output)
-    force = bool(args.force)
 
     if not adoc_input.exists():
-        raise FileNotFoundError("Adoc file does not exist: {}".format(adoc_input))
+        raise FileNotFoundError(f"Adoc file does not exist: {adoc_input}")
 
     adoc_output.parent.mkdir(exist_ok=True, parents=True)
 
-    if not force and adoc_output.exists():
-        raise FileExistsError("Output path already exists and --force was not specified: {}".format(adoc_output))
+    if adoc_output.exists() and not args.force:
+        raise FileExistsError(f"Output file already exists: {adoc_output}. Use --force to overwrite.")
 
     fix_asciidoc(adoc_input, adoc_output)
 
