@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-from word2asciidoc import read_emf_images, convert_emf_to_png
-from word2asciidoc import remove_text_matching_regex
-from word2asciidoc import escape_double_angular_brackets
-from word2asciidoc import recolor_notes
-from word2asciidoc import add_anchor_to_biblio, add_link_to_biblio
-from word2asciidoc import use_block_tag_for_img_and_move_caption_ahead
-from word2asciidoc import escape_square_brackets
+from word2asciidoc import read_emf_images, convert_emf_to_png, escape_double_angular_brackets, recolor_notes, \
+    remove_text_matching_regex, use_block_tag_for_img_and_move_caption_ahead, escape_square_brackets, \
+    add_anchor_to_biblio, add_link_to_biblio
 import logging
 
 logging.basicConfig(level=logging.INFO,

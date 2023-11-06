@@ -27,7 +27,3 @@ def read_emf_images(folder_path):
         if file_name.endswith('.emf'):
             image_files[file_name] = os.path.join(folder_path, file_name)
     return image_files
-
-
-def replace_emf_with_png(content):
-    return content.replace('.emf', '.png')
