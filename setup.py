@@ -14,18 +14,18 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='aas_word2asciidoc',
+    name='word2asciidoc',
     version='0.1.1',
     description='Fix generated asciidoc files for AAS specifications',
     long_description_content_type='text/markdown',
     long_description=long_description,
-    url='https://github.com/zrgt/aas_word2asciidoc',
+    url='https://github.com/admin-shell-io/word2asciidoc',
     author='Igor Garmaev',
     author_email='garmaev@gmx.net',
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache License',
         'Operating System :: OS Independent',
     ],
     license="License :: OSI Approved :: MIT License",

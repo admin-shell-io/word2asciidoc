@@ -2,7 +2,7 @@
 
 To work with the current development version, you can install the package directly from GitHub using Pip's Git feature:
 ```bash
-pip install git+https://github.com/zrgt/aas_word2asciidoc.git@master
+pip install git+https://github.com/admin-shell-io/word2asciidoc.git@master
 ```
 
 ## Usage

@@ -49,9 +49,9 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Install aas_word2asciidoc and fix AsciiDoc
+    - name: Install word2asciidoc and fix AsciiDoc
       run: |
-        pip install git+https://github.com/zrgt/aas_word2asciidoc.git@master
+        pip install git+https://github.com/admin-shell-io/word2asciidoc.git@master
         fix_adoc --adoc_input output_folder/generated_file.adoc --adoc_output output_folder/index.adoc
 
     - name: Upload artifact
