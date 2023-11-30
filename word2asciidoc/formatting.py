@@ -112,3 +112,14 @@ def add_links_to_bibliography(content, keys):
         in_link_patterns = in_link_patterns.format(key=key)
         content = re.sub(in_link_patterns, f'link:#bib{key}[[{key}\]]', content)
     return content
+    
+    
+def image_inline_to_block(content):
+    content = re.sub(r'image:.', r'image::.', content)
+    return content
+    
+    
+def remove_bib_numeration(content):
+    if not re.search(r'\[[Bb]ibliography\]', content):
+        content = re.sub(r'== [Bb]ibliography', "[bibliography]\n== Bibliography", content)
+    return content

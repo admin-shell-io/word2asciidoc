@@ -48,6 +48,10 @@ pip install git+https://github.com/admin-shell-io/word2asciidoc.git@master
     ```
 6. Do manual adjustments as needed (see [Manual Adjustments](#manual-adjustments)).
 
+### Known Limitations on Non-Windows Operating Systems
+
+Converting the image files from emf to png using the python script will likely not succeed in operating systems other windows. For MacOS or Linux, users may need to manually convert the images into png after extraction. Using different tools my result in varying results in terms of dimensions and density etc. that may or may not fall in with the results that would normally be produced by the script. It should be noted that first converting to svg than to png is more likely to result in the same conversion as the script.
+
 ### Manual Adjustments
 
 After running the scripts, manually check `[YOUR_DOCUMENT].adoc` for any unresolved issues. Refer to the [AsciiDoc User Manual](https://docs.asciidoctor.org/asciidoc/latest/) for guidance.

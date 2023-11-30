@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO,
 def process_images(directory, content):
     logging.info("Convert the emf images in Asciidoc document to png")
     images_to_convert = read_emf_images(directory.name + "/media")
-    for image_name, image_path in images_to_convert:
+    for image_name, image_path in images_to_convert.items():
         try:
             logging.info(f"Convert the emf image: {image_name}")
             convert_emf_to_png(image_path, image_path.replace(".emf", ".png"))
@@ -47,7 +47,13 @@ def process_content(content):
 
     logging.info("Escaping square brackets")
     content = escape_source_square_brackets(content)
-
+    
+    logging.info("Converting inline images to image blocks")
+    content = image_inline_to_block(content)
+    
+    logging.info("Removing section numeration from bibliography")
+    content = remove_bib_numeration(content)
+    
     return content
 
 
