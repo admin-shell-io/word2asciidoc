@@ -196,7 +196,16 @@ def fix_tables_with_appendices(content):
             text)
         return text
     content = re.sub(
-        r'\[.*\](\n)+\|\=\=\=\n((\|.*\n)+?)\|Inherits from:.*\|\n',
+        r'\[.*\](\n)+\|\===\n((\|.*\n)+?)\|Inherits from:.*\|\n',
         repl,
         content)
+    return content
+
+
+def remove_toc_and_add_doc_attr(content):
+    content = re.sub(
+        r'\nImprint((\|.*\n)+?)== Preamble',
+        '== Preamble',
+        content)
+    content = ':toc: left\n:toc-title: Contents\n:sectlinks:\n:sectnums:\n:stylesheet: ../../style.css\n:favicon: ../../favicon.png\n:imagesdir: media/\n:nofooter:\n\ninclude::constraints.adoc[]\n\n' + content
     return content

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-from word2asciidoc import read_emf_images, convert_emf_to_png, escape_double_angle_brackets, recolor_notes, remove_text_by_patterns, image_figure_and_table_fix, fix_references, escape_source_square_brackets, add_anchors_to_bibliography, add_links_to_bibliography, remove_bib_numeration, fix_tables_with_appendices
+from word2asciidoc import read_emf_images, convert_emf_to_png, escape_double_angle_brackets, recolor_notes, remove_text_by_patterns, image_figure_and_table_fix, fix_references, escape_source_square_brackets, add_anchors_to_bibliography, add_links_to_bibliography, remove_bib_numeration, fix_tables_with_appendices, remove_toc_and_add_doc_attr
 import logging
 
 # Configure logging
@@ -58,6 +58,11 @@ def process_content(content):
 
     logging.info("Fixing the formatting for tables with appendices")
     content = fix_tables_with_appendices(content)
+
+    logging.info(
+        "Removing the hard-coded content tables at the beginning that are superfluous")
+    logging.info("Add the default document attributes")
+    content = remove_toc_and_add_doc_attr(content)
 
     return content
 
