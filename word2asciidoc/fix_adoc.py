@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-from word2asciidoc import read_emf_images, convert_emf_to_png, escape_double_angle_brackets, recolor_notes, \
-    remove_text_by_patterns, use_block_tag_for_img_and_move_caption_ahead, escape_source_square_brackets, \
-    add_anchors_to_bibliography, add_links_to_bibliography
+from word2asciidoc import read_emf_images, convert_emf_to_png, escape_double_angle_brackets, recolor_notes, remove_text_by_patterns, image_figure_and_table_fix, fix_references, escape_source_square_brackets, add_anchors_to_bibliography, add_links_to_bibliography, remove_bib_numeration, fix_tables_with_appendices
 import logging
 
 # Configure logging
@@ -20,18 +18,31 @@ def process_images(directory, content):
             logging.info(f"Convert the emf image: {image_name}")
             convert_emf_to_png(image_path, image_path.replace(".emf", ".png"))
             # 2.2 Replace all occurrences of emf to png in asciidoc file
-            content = content.replace(image_name, image_name.replace(".emf", ".png"))
+            content = content.replace(
+                image_name, image_name.replace(
+                    ".emf", ".png"))
         except Exception:
             logging.error(f"Could not convert the emf image: {image_name}")
     return content
 
 
 def process_content(content):
-    logging.info("Removing certain patterns in asciidoc file")
-    content = remove_text_by_patterns(content)
+    logging.info("Escaping square brackets")
+    content = escape_source_square_brackets(content)
+
+    logging.info(
+        "Fixing table and figure titles, id's and their respective replacement")
+    logging.info("Converting inline images to blocks")
+    content = image_figure_and_table_fix(content)
 
     logging.info("Escaping double angle brackets")
     content = escape_double_angle_brackets(content)
+
+    logging.info("Fixing inner references to tables and figures")
+    content = fix_references(content)
+
+    logging.info("Removing certain patterns in asciidoc file")
+    content = remove_text_by_patterns(content)
 
     logging.info("Styling note boxes")
     content = recolor_notes(content)
@@ -42,18 +53,12 @@ def process_content(content):
     logging.info("Connecting in-document references to bibliography")
     content = add_links_to_bibliography(content, keys)
 
-    logging.info("Fixing image captions")
-    content = use_block_tag_for_img_and_move_caption_ahead(content)
-
-    logging.info("Escaping square brackets")
-    content = escape_source_square_brackets(content)
-    
-    logging.info("Converting inline images to image blocks")
-    content = image_inline_to_block(content)
-    
     logging.info("Removing section numeration from bibliography")
     content = remove_bib_numeration(content)
-    
+
+    logging.info("Fixing the formatting for tables with appendices")
+    content = fix_tables_with_appendices(content)
+
     return content
 
 
@@ -76,7 +81,8 @@ def fix_asciidoc(input_file, output_file):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser("Fixes issues in an AsciiDoc file generated from Word.")
+    parser = argparse.ArgumentParser(
+        "Fixes issues in an AsciiDoc file generated from Word.")
     parser.add_argument("-i", "--adoc_input", required=True,
                         help="Path to the initial generated AsciiDoc file")
     parser.add_argument("-o", "--adoc_output", required=True,
@@ -94,7 +100,8 @@ def main() -> None:
     adoc_output.parent.mkdir(exist_ok=True, parents=True)
 
     if adoc_output.exists() and not args.force:
-        raise FileExistsError(f"Output file already exists: {adoc_output}. Use --force to overwrite.")
+        raise FileExistsError(
+            f"Output file already exists: {adoc_output}. Use --force to overwrite.")
 
     fix_asciidoc(adoc_input, adoc_output)
 

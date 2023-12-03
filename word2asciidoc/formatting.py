@@ -35,10 +35,6 @@ def remove_lines(content, start_line, end_line):
 def remove_text_by_patterns(content):
     regular_exp_list = [
         r'Table of Contents\n\n(.*?)(?=\n\n==)',
-        r'\[#_Toc\d* \.anchor]####Table \d*\:?\s?',
-        r'\[#_Ref\d* \.anchor]####Table \d*\:?\s?',
-        r'\[\#_Ref\d* \.anchor\](?:\#{2,4})',
-        r'\[\#_Toc\d* \.anchor\](?:\#{2,4})',
         r'\{empty\}'
     ]
 
@@ -46,30 +42,6 @@ def remove_text_by_patterns(content):
         # Remove occurrences of the specified regular expression
         content = re.sub(regex, '', content)
     return content
-
-
-def use_block_tag_for_img_and_move_caption_ahead(content):
-    # Define the callback function
-    def replacement(match):
-        # Use block figure tag
-        figure_tag: str = match[1]
-        figure_tag = figure_tag.replace("image:", "image::")
-
-        # remove "Figure+num" as it will be automatically done in AsciiDoc
-        caption: str = match[2]
-        caption = re.sub(r'^Figure \d*:?', '', caption)
-
-        # Move the caption to the beginning of the figure tag
-        modified_figure_tag = f'.{caption.strip()}\n{figure_tag}\n'
-
-        return modified_figure_tag
-
-    # Define the regular expression pattern to match figure tags with specific captions
-    pattern = r'(image:\S+\[.*?\])\s+?\n?\n?(Figure.*?\n)'
-
-    # Replace the original figure tags with the modified ones
-    new_content = re.sub(pattern, replacement, content)
-    return new_content
 
 
 def escape_source_square_brackets(content):
@@ -95,12 +67,15 @@ def add_anchors_to_bibliography(content):
     bibliography_text = content[bibliography_pos:]
     biblio_pattern = re.compile(r'^\[(\d+)\](.+)', re.MULTILINE)
 
-    matches = {key: val for key, val in biblio_pattern.findall(bibliography_text)}
+    matches = {
+        key: val for key,
+        val in biblio_pattern.findall(bibliography_text)}
 
     for biblio_tag_num, biblio_tag_text in matches.items():
         anchor = f'[#bib{biblio_tag_num}]'
         modified_text = f'{anchor}\n[{biblio_tag_num}]{biblio_tag_text}'
-        bibliography_text = bibliography_text.replace(f'[{biblio_tag_num}]{biblio_tag_text}', modified_text)
+        bibliography_text = bibliography_text.replace(
+            f'[{biblio_tag_num}]{biblio_tag_text}', modified_text)
 
     content = content[:bibliography_pos] + bibliography_text
     return matches.keys(), content
@@ -110,16 +85,118 @@ def add_links_to_bibliography(content, keys):
     for key in keys:
         in_link_patterns = r'(?<!\[#bib{key}\]\n)\[{key}\]'
         in_link_patterns = in_link_patterns.format(key=key)
-        content = re.sub(in_link_patterns, f'link:#bib{key}[[{key}\]]', content)
+        content = re.sub(
+            in_link_patterns,
+            f'link:#bib{key}[[{key}\\]]',
+            content)
     return content
-    
-    
-def image_inline_to_block(content):
-    content = re.sub(r'image:.', r'image::.', content)
+
+
+def image_figure_and_table_fix(content):
+    content = re.sub(r'\n.*{blank}\n', '\n', content)
+    content = re.sub(r'\n\+\n', '\n', content)
+    content = re.sub(r' .anchor\]', ']', content)
+    content = re.sub(r'image:.', 'image::.', content)
+    content = re.sub(r'###*( )*(Figure|Table) [0-9]* ', '\n.', content)
     return content
-    
-    
+
+
 def remove_bib_numeration(content):
     if not re.search(r'\[[Bb]ibliography\]', content):
-        content = re.sub(r'== [Bb]ibliography', "[bibliography]\n== Bibliography", content)
+        content = re.sub(
+            r'== [Bb]ibliography',
+            "[bibliography]\n== Bibliography",
+            content)
+    return content
+
+
+def fix_references(content):
+    info = re.compile(r'^link:#[_a-zA-Z].*')
+    misc_refs = re.compile(r'(Figure|Table|Annex) [#_a-zA-Z0-9].*')
+    chapter_refs = re.compile(r'([0-9]*\.)*[0-9]* [#_a-zA-Z0-9].*')
+    replacement_dict = {}
+    for line in content.split('\n'):
+        if info.match(line):
+            replacement_dict['\n' + line + '\n'] = ""
+            repl, val = line.split('[')[0:2:]
+            if misc_refs.match(val):
+                val = ' '.join(val.split()[0:2:])
+                repl = f"<<{repl},{val}>>"
+                replacement_dict[" " + val + " "] = repl
+                replacement_dict[" " + val + ". "] = repl
+                replacement_dict[" " + val + ") "] = repl
+            elif chapter_refs.match(val):
+                val = val.split()[0]
+                repl = f"<<{repl},{val}>>"
+                replacement_dict["Subclause " + val +
+                                 " "] = "Subclause " + val + " "
+                replacement_dict["subclause " + val +
+                                 " "] = "subclause " + val + " "
+                replacement_dict["clause " + val + " "] = "clause " + val + " "
+                replacement_dict["Clause " + val + " "] = "Clause " + val + " "
+                replacement_dict["Subclause " + val +
+                                 ". "] = "Subclause " + val + ". "
+                replacement_dict["subclause " + val +
+                                 ". "] = "subclause " + val + ". "
+                replacement_dict["clause " + val +
+                                 ". "] = "clause " + val + ". "
+                replacement_dict["Clause " + val +
+                                 ". "] = "Clause " + val + ". "
+                replacement_dict["Subclause " + val +
+                                 ") "] = "Subclause " + val + ") "
+                replacement_dict["subclause " + val +
+                                 ") "] = "subclause " + val + ") "
+                replacement_dict["clause " + val +
+                                 ") "] = "clause " + val + ") "
+                replacement_dict["Clause " + val +
+                                 ") "] = "Clause " + val + ") "
+
+    for word, replacement in replacement_dict.items():
+        content = content.replace(word, replacement)
+
+    def repl_1(match):
+        text = match.group(0)
+        text = [s.strip(' \n#+')
+                for s in text.split('\n') if s.strip(' \n#+') != '']
+        text = text[1:] + [text[0]]
+        text[-1] = re.sub(r'\]', ']\n\n', text[-1])
+        text = '\n'.join(text)
+
+        return text
+
+    def repl_2(match):
+        text = match.group(0)
+        text = [s.strip() for s in text.split('##')]
+        text[0], text[-1] = text[-1], text[0]
+        text = [re.sub(r'\]', ']\n', elem) for elem in text]
+        text = [s.strip() for s in '\n'.join(text).split('\n')]
+        text[1] = re.sub(r'.*(Figure|Table) [0-9]* ', '.', text[1])
+        text[1], text[2] = text[2], text[1]
+        text = '\n' + '\n'.join(text) + '\n'
+        return text
+
+    content = re.sub(r'\n(\[#_(Ref|Toc).*\])##image:(.*(\n))', repl_2, content)
+    content = re.sub(
+        r'\n(=)*( )*(image:.*\])(.*)(\n)+(\[#_(Ref|Toc).*\])(.*(\n))(.*(\n))',
+        repl_1,
+        content)
+    return content
+
+
+def fix_tables_with_appendices(content):
+    def repl(match):
+        text = match.group(0)
+        text = re.sub(
+            r'\[.*\](\n)+',
+            '[.table-with-appendix-table]\n[cols=\"25%h,75%\"]',
+            text)
+        text = re.sub(
+            r'\n\|Inherits from:.*\|\n',
+            '\n\n{filler}\n\\g<0>|===\n[cols=\"25%,40%,25%,10%\",options=\"header\"]\n|===\n',
+            text)
+        return text
+    content = re.sub(
+        r'\[.*\](\n)+\|\=\=\=\n((\|.*\n)+?)\|Inherits from:.*\|\n',
+        repl,
+        content)
     return content
