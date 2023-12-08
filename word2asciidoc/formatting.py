@@ -95,8 +95,8 @@ def add_links_to_bibliography(content, keys):
 def image_figure_and_table_fix(content):
     content = re.sub(r'\n.*{blank}\n', '\n', content)
     content = re.sub(r'\n\+\n', '\n', content)
-    content = re.sub(r' .anchor\]', ']', content)
-    content = re.sub(r'image:.', 'image::.', content)
+    content = re.sub(r' \.anchor\]', ']', content)
+    content = re.sub(r'image:\.', 'image::.', content)
     content = re.sub(r'###*( )*(Figure|Table) [0-9]* ', '\n.', content)
     return content
 
