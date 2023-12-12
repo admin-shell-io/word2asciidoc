@@ -40,6 +40,10 @@ jobs:
         FILE_URL=$(echo "$ISSUE_BODY" | grep -oP 'https?://[^ ]+\.docx')
         wget "$FILE_URL" -O input_file.docx
 
+    - name: Create output folder
+      run: |
+        mkdir -p output_folder
+
     - name: Transform Word to AsciiDoc
       run: |
         pandoc input_file.docx -f docx -t asciidoctor --wrap=none --extract-media=output_folder -o output_folder/generated_file.adoc
