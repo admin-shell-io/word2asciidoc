@@ -11,16 +11,19 @@ logging.basicConfig(level=logging.INFO,
 
 
 def process_images(directory, content):
+    if directory.name:
+        dir_name = directory.name
+    else:
+        dir_name = "."
     logging.info("Convert the emf images in Asciidoc document to png")
-    images_to_convert = read_emf_images(directory.name + "/media")
+    images_to_convert = read_emf_images(dir_name + "/media")
     for image_name, image_path in images_to_convert.items():
+        # 2.2 Replace all occurrences of emf to png in asciidoc file
+        content = content.replace(
+            image_name, image_name.replace(
+                ".emf", ".png"))
         try:
             logging.info(f"Convert the emf image: {image_name}")
-            convert_emf_to_png(image_path, image_path.replace(".emf", ".png"))
-            # 2.2 Replace all occurrences of emf to png in asciidoc file
-            content = content.replace(
-                image_name, image_name.replace(
-                    ".emf", ".png"))
         except Exception:
             logging.error(f"Could not convert the emf image: {image_name}")
     return content
@@ -38,7 +41,7 @@ def process_content(content):
 
     logging.info("Replacing certain patterns")
     content = replace_text_by_patterns(content)
-    
+
     logging.info(
         "Fixing table and figure titles, id's and their respective replacement")
     content = remove_superfluous_attrs_image_figure_table(content)
@@ -46,11 +49,11 @@ def process_content(content):
     logging.info("Escaping double angle brackets")
     content = escape_double_angle_brackets(content)
 
-    logging.info("Fixing inner references to tables and figures")
-    content = fix_references(content)
-
     logging.info("Styling note boxes")
     content = recolor_notes(content)
+
+    logging.info("Fixing inner references to tables and figures")
+    content = fix_references(content)
 
     logging.info("Adding anchors to bibliography")
     keys, content = add_anchors_to_bibliography(content)

@@ -36,7 +36,8 @@ def remove_text_by_patterns(content):
     regular_exp_list = [
         r'\{empty\}',
         r'^.*{blank}$',
-        r'^\+$',
+        r'^( )*\+$',
+        r'type __Reference__',
     ]
 
     for regex in regular_exp_list:
@@ -46,10 +47,26 @@ def remove_text_by_patterns(content):
 
 
 def replace_text_by_patterns(content):
-    content = re.sub(r'\]##.*\nTable', ']##Table', content)
-    content = re.sub(r'\]##.*\nFigure', ']##Figure', content)
+    content = re.sub(r'.\[#_Ref', '\n\n[#_Ref', content)
+    content = re.sub(r'.\[#_Toc', '\n\n[#_Toc', content)
+    content = re.sub(r'[^\+]\+\n', '', content)
     content = re.sub(r'&#91;', '[', content)
     content = re.sub(r'&#93;', ']', content)
+    content = re.sub(r'&gt;', '>', content)
+    content = re.sub(r'&lt;', '<', content)
+    content = re.sub(
+        r'_[0-9]_',
+        lambda x: x.group(0).replace(
+            '_',
+            ''),
+        content)
+    content = re.sub(
+        r'image:.*\[.*\]',
+        lambda x: re.sub(
+            r'\[.*\]',
+            '[align=center]',
+            x.group(0)),
+        content)
     return content
 
 
@@ -108,14 +125,14 @@ def remove_superfluous_attrs_image_figure_table(content):
     # Remove superfluous prefixes from Table and Figure names
     # With the form 'Table xx', as these will be generated automatically
     # also split tile into new line with dot
-    content = re.sub(r'###*( )*(Figure|Table) [0-9]* ', '\n.', content)
-    content = re.sub(r'\](Figure|Table) [0-9]* ', '].', content)
+    content = re.sub(r'###*( )*(Figure|Table)[ _0-9]* ', '\n.', content)
+    content = re.sub(r'\](Figure|Table)[ _0-9]*', '].', content)
     return content
 
 
 def convert_image_inline_to_block(content):
     # Convert inline images to dedicated blocks
-    content = re.sub(r'image:\.', 'image::.', content)
+    content = re.sub(r'image:', 'image::', content)
     return content
 
 
@@ -149,7 +166,7 @@ def fix_references(content):
 
     # To check if a given informative line describes a chapter/section
     # reference
-    chapter_refs = re.compile(r'([0-9]*\.)*[0-9]* .*')
+    chapter_refs = re.compile(r'([0-9]*\.)*[0-9]*')
 
     # We will modify a dictionary dynamically to store content to be replaced
     replacement_dict = {}
@@ -161,11 +178,13 @@ def fix_references(content):
         # Check if a line is one of the aforementioned informative lines in the
         # beginning
         if info.match(line):
-
             # If yes, split using ']' and take the first two elements for
             # values
             repl, val = line.split('[')[0:2:]
-
+            # Formatting the right so that html and pdf documents generated
+            # from this file will function properly
+            repl = re.sub(r'\-', '_', repl)
+            repl = re.sub(r'link:#(_)?', '#\\_', repl)
             # If the informative line describes a reference for an image,
             # figure, table or annex
             if misc_refs.match(val):
@@ -175,7 +194,6 @@ def fix_references(content):
                 # Intuitively, the replacement value has form of an ascii-doc
                 # reference
                 repl = f"<<{repl},{val}>>"
-
                 # Matching the value directly might result in problems
                 # like matching Figure 45 for the 'Figure 4' part and having
                 # a replacement such as the following
@@ -185,7 +203,11 @@ def fix_references(content):
                 # expression has ended
                 replacement_dict[val + " "] = repl + " "
                 replacement_dict[val + "."] = repl + "."
+                replacement_dict[val + ","] = repl + ","
                 replacement_dict[val + ")"] = repl + ")"
+                replacement_dict[val + "\n"] = repl + "\n"
+                replacement_dict[val + ";"] = repl + ";"
+                replacement_dict[val + ":"] = repl + ":"
 
             # If the informative line describes a reference for a chapter or
             # section
@@ -195,7 +217,6 @@ def fix_references(content):
                 # Only there are more possibilities so more entries
                 val = val.split()[0]
                 repl = f"<<{repl},{val}>>"
-
                 possible_keys = [
                     "Subclause ",
                     "subclause ",
@@ -203,19 +224,24 @@ def fix_references(content):
                     "Clause "]
                 for word in possible_keys:
                     replacement_dict[word + val +
-                                     " "] = "Subclause " + repl + " "
+                                     " "] = word + repl + " "
+                    replacement_dict[word + val +
+                                     ";"] = word + repl + ":"
 
                     replacement_dict[word + val +
-                                     ". "] = "Subclause " + repl + ". "
+                                     ":"] = word + repl + ":"
 
                     replacement_dict[word + val +
-                                     ") "] = "Subclause " + repl + ") "
+                                     ")"] = word + repl + ")"
 
                     replacement_dict[word + val +
-                                     ".\n"] = "Subclause " + repl + ".\n"
+                                     ". "] = word + repl + ". "
 
                     replacement_dict[word + val +
-                                     ")\n"] = "Subclause " + repl + ")\n"
+                                     "\n"] = word + repl + "\n"
+
+                    replacement_dict[word + val +
+                                     ".\n"] = word + repl + ".\n"
 
     # Replace the words with references using the dictionary we generated
     for word, replacement in replacement_dict.items():
@@ -236,7 +262,7 @@ def fix_references(content):
         text[0], text[-1] = text[-1], text[0]
         text = [re.sub(r'\]', ']\n', elem) for elem in text]
         text = [s.strip() for s in '\n'.join(text).split('\n')]
-        text[1] = re.sub(r'.*(Figure|Table) [0-9]* ', '.', text[1])
+        text[1] = re.sub(r'.*(Figure|Table) [ _0-9]* ', '.', text[1])
         text[1], text[2] = text[2], text[1]
         text = '\n' + '\n'.join(text) + '\n'
         return text
@@ -246,12 +272,12 @@ def fix_references(content):
     # a uniform structure. We will then transform them and set the ordering.
     content = re.sub(
         r'\]\[#_Ref',
-        '\\]\n\\[#_Ref',
+        ']\n[#_Ref',
         content)
 
     content = re.sub(
         r'\]\[#_Toc',
-        '\\]\n\\[#_Toc',
+        ']\n[#_Toc',
         content)
 
     # Match when '##image' follows the reference id
@@ -274,6 +300,23 @@ def fix_references(content):
         r'\n(=)*( )*(image:.*\])(.*)(\n)+(\[#_(Ref|Toc).*\])(.*(\n))(.*(\n))',
         reference_ordering,
         content)
+
+    # Get rid of the long path before the image file, whatever it might be. We
+    # declare the media directory to be ./media within the script.
+    content = re.sub(r'image::(.*)media/', 'image::', content)
+
+    # To fix the breakage with equal signs
+    content = re.sub(r'(=)*( )*image::', 'image::', content)
+
+    def parantheses(match):
+        text = match.group(0)
+        text = text.strip("()")
+        text = re.sub(r',', ',(', text)
+        text = re.sub(r'>>', ')>>', text)
+        return text
+
+    content = re.sub(r'\(<<.*>>\)', parantheses, content)
+
     return content
 
 
@@ -305,6 +348,7 @@ def fix_tables_with_appendices(content):
         r'\[.*\](\n)+\|\===\n((\|.*\n)+?)\|Inherits from:.*\|\n',
         split_and_mark,
         content)
+
     return content
 
 
@@ -313,12 +357,13 @@ def remove_toc_and_var(content):
     # and similar content at the beginning that are badly formatted, non-necessary,
     # cause duplication and/or are error prone on another level.
     content = re.sub(
-        r'\nImprint([\S\n\t\v ]+?)== Preamble',
+        r'([\S\n\t\v ]+?)== Preamble',
         '\n== Preamble',
         content)
     return content
 
 
 def add_doc_attr(content):
-    content = ':toc: left\n:toc-title: Contents\n:sectlinks:\n:sectnums:\n:stylesheet: ../../style.css\n:favicon: ../../favicon.png\n:imagesdir: media/\n:nofooter:\n\ninclude::constraints.adoc[]\n\n' + content
+    content = re.sub(r'^image::.*$', '', content, 1, flags=re.MULTILINE)
+    content = ':toc: left\n:toc-title: Contents\n:sectlinks:\n:sectnums:\n:stylesheet: ../../style.css\n:favicon: ../../favicon.png\n:imagesdir: media/\n:nofooter:\n\ninclude::constraints.adoc[]\n' + content
     return content
