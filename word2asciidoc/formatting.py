@@ -54,16 +54,7 @@ def replace_text_by_patterns(content):
     content = re.sub(r'&#93;', ']', content)
     content = re.sub(r'&gt;', '>', content)
     content = re.sub(r'&lt;', '<', content)
-
     content = re.sub(r'\]Figure', ']\nFigure', content)
-
-    def aga(match):
-        text = match.group(0)
-        print(text)
-        return text
-
-    # content = re.sub(r'^[^(\[#_)+].*Figure.*$', aga, content, flags=re.MULTILINE)
-    # print(content)
     content = re.sub(
         r'_[0-9]_',
         lambda x: x.group(0).replace(
@@ -342,7 +333,7 @@ def remove_toc_and_var(content):
     # and similar content at the beginning that are badly formatted, non-necessary,
     # cause duplication and/or are error prone on another level.
     content = re.sub(
-        r'\nImprint((\|.*\n)+?)== Preamble',
+        r'\nImprint((.*\n)+?)== Preamble',
         '\n== Preamble',
         content)
     return content
