@@ -58,6 +58,7 @@ After running the scripts, manually check `[YOUR_DOCUMENT].adoc` for any unresol
 
 Common manual tasks include:
 
+- **Ordering Image reference ID's**: All figures must be reference id, followed by title then image. This is sometimes not the case, and needs manual fixing.
 - **Table of Contents**: Remove or adjust the placement.
 - **Document Attributes**: Set up necessary AsciiDoc attributes at the beginning of the file.
 - **Table Formatting**: Ensure tables have headers and are formatted correctly.

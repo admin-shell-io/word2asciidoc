@@ -54,6 +54,16 @@ def replace_text_by_patterns(content):
     content = re.sub(r'&#93;', ']', content)
     content = re.sub(r'&gt;', '>', content)
     content = re.sub(r'&lt;', '<', content)
+
+    content = re.sub(r'\]Figure', ']\nFigure', content)
+    
+    def aga(match):
+        text = match.group(0)
+        print(text)
+        return text
+        
+    #content = re.sub(r'^[^(\[#_)+].*Figure.*$', aga, content, flags=re.MULTILINE)
+    #print(content)
     content = re.sub(
         r'_[0-9]_',
         lambda x: x.group(0).replace(
@@ -247,15 +257,6 @@ def fix_references(content):
     for word, replacement in replacement_dict.items():
         content = content.replace(word, replacement)
 
-    def reference_ordering(match):
-        text = match.group(0)
-        text = [s.strip(' \n#+')
-                for s in text.split('\n') if s.strip(' \n#+') != '']
-        text = text[1:] + [text[0]]
-        text[-1] = re.sub(r'\]', ']\n\n', text[-1])
-        text = '\n' + '\n'.join(text) + '\n'
-        return text
-
     def inline_refs(match):
         text = match.group(0)
         text = [s.strip() for s in text.split('##')]
@@ -288,17 +289,10 @@ def fix_references(content):
     # This may sound counter-intuitive, but everything else has this form
     # We aim to bring inline references into the same form
     # The ordering issue is fixed with the following match
+    
     content = re.sub(
         r'\n(\[#_(Ref|Toc).*\])##image:(.*(\n))',
         inline_refs,
-        content)
-
-    # Match when Reference block follows the image itself
-    # This is the case for everything by default, which is obviously false
-    # After matching we fix the ordering in the dedicated function
-    content = re.sub(
-        r'\n(=)*( )*(image:.*\])(.*)(\n)+(\[#_(Ref|Toc).*\])(.*(\n))(.*(\n))',
-        reference_ordering,
         content)
 
     # Get rid of the long path before the image file, whatever it might be. We
@@ -307,15 +301,6 @@ def fix_references(content):
 
     # To fix the breakage with equal signs
     content = re.sub(r'(=)*( )*image::', 'image::', content)
-
-    def parantheses(match):
-        text = match.group(0)
-        text = text.strip("()")
-        text = re.sub(r',', ',(', text)
-        text = re.sub(r'>>', ')>>', text)
-        return text
-
-    content = re.sub(r'\(<<.*>>\)', parantheses, content)
 
     return content
 
@@ -357,13 +342,12 @@ def remove_toc_and_var(content):
     # and similar content at the beginning that are badly formatted, non-necessary,
     # cause duplication and/or are error prone on another level.
     content = re.sub(
-        r'([\S\n\t\v ]+?)== Preamble',
+        r'\nImprint((\|.*\n)+?)== Preamble',
         '\n== Preamble',
         content)
     return content
 
 
 def add_doc_attr(content):
-    content = re.sub(r'^image::.*$', '', content, 1, flags=re.MULTILINE)
     content = ':toc: left\n:toc-title: Contents\n:sectlinks:\n:sectnums:\n:stylesheet: ../../style.css\n:favicon: ../../favicon.png\n:imagesdir: media/\n:nofooter:\n' + content
     return content
