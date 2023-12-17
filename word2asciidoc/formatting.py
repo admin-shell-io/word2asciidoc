@@ -34,42 +34,50 @@ def remove_lines(content, start_line, end_line):
 
 def remove_text_by_patterns(content):
     regular_exp_list = [
-        r'Table of Contents\n\n(.*?)(?=\n\n==)',
-        r'\[#_Toc\d* \.anchor]####Table \d*\:?\s?',
-        r'\[#_Ref\d* \.anchor]####Table \d*\:?\s?',
-        r'\[\#_Ref\d* \.anchor\](?:\#{2,4})',
-        r'\[\#_Toc\d* \.anchor\](?:\#{2,4})',
-        r'\{empty\}'
+        r'\{empty\}',
+        r'^.*{blank}$',
+        r'^( )*\+$',
+        r'type __Reference__',
     ]
 
     for regex in regular_exp_list:
         # Remove occurrences of the specified regular expression
-        content = re.sub(regex, '', content)
+        content = re.sub(regex, '', content, flags=re.MULTILINE)
     return content
 
 
-def use_block_tag_for_img_and_move_caption_ahead(content):
-    # Define the callback function
-    def replacement(match):
-        # Use block figure tag
-        figure_tag: str = match[1]
-        figure_tag = figure_tag.replace("image:", "image::")
+def replace_text_by_patterns(content):
+    content = re.sub(r'.\[#_Ref', '\n\n[#_Ref', content)
+    content = re.sub(r'.\[#_Toc', '\n\n[#_Toc', content)
+    content = re.sub(r'[^\+]\+\n', '', content)
+    content = re.sub(r'&#91;', '[', content)
+    content = re.sub(r'&#93;', ']', content)
+    content = re.sub(r'&gt;', '>', content)
+    content = re.sub(r'&lt;', '<', content)
 
-        # remove "Figure+num" as it will be automatically done in AsciiDoc
-        caption: str = match[2]
-        caption = re.sub(r'^Figure \d*:?', '', caption)
+    content = re.sub(r'\]Figure', ']\nFigure', content)
 
-        # Move the caption to the beginning of the figure tag
-        modified_figure_tag = f'.{caption.strip()}\n{figure_tag}\n'
+    def aga(match):
+        text = match.group(0)
+        print(text)
+        return text
 
-        return modified_figure_tag
-
-    # Define the regular expression pattern to match figure tags with specific captions
-    pattern = r'(image:\S+\[.*?\])\s+?\n?\n?(Figure.*?\n)'
-
-    # Replace the original figure tags with the modified ones
-    new_content = re.sub(pattern, replacement, content)
-    return new_content
+    # content = re.sub(r'^[^(\[#_)+].*Figure.*$', aga, content, flags=re.MULTILINE)
+    # print(content)
+    content = re.sub(
+        r'_[0-9]_',
+        lambda x: x.group(0).replace(
+            '_',
+            ''),
+        content)
+    content = re.sub(
+        r'image:.*\[.*\]',
+        lambda x: re.sub(
+            r'\[.*\]',
+            '[align=center]',
+            x.group(0)),
+        content)
+    return content
 
 
 def escape_source_square_brackets(content):
@@ -95,12 +103,15 @@ def add_anchors_to_bibliography(content):
     bibliography_text = content[bibliography_pos:]
     biblio_pattern = re.compile(r'^\[(\d+)\](.+)', re.MULTILINE)
 
-    matches = {key: val for key, val in biblio_pattern.findall(bibliography_text)}
+    matches = {
+        key: val for key,
+        val in biblio_pattern.findall(bibliography_text)}
 
     for biblio_tag_num, biblio_tag_text in matches.items():
         anchor = f'[#bib{biblio_tag_num}]'
         modified_text = f'{anchor}\n[{biblio_tag_num}]{biblio_tag_text}'
-        bibliography_text = bibliography_text.replace(f'[{biblio_tag_num}]{biblio_tag_text}', modified_text)
+        bibliography_text = bibliography_text.replace(
+            f'[{biblio_tag_num}]{biblio_tag_text}', modified_text)
 
     content = content[:bibliography_pos] + bibliography_text
     return matches.keys(), content
@@ -110,5 +121,233 @@ def add_links_to_bibliography(content, keys):
     for key in keys:
         in_link_patterns = r'(?<!\[#bib{key}\]\n)\[{key}\]'
         in_link_patterns = in_link_patterns.format(key=key)
-        content = re.sub(in_link_patterns, f'link:#bib{key}[[{key}\]]', content)
+        content = re.sub(
+            in_link_patterns,
+            f'link:#bib{key}[[{key}\\]]',
+            content)
+    return content
+
+
+def remove_superfluous_attrs_image_figure_table(content):
+    # Remove superfluous and badly named and placed identification
+    content = re.sub(r' \.anchor\]', ']', content)
+
+    # Remove superfluous prefixes from Table and Figure names
+    # With the form 'Table xx', as these will be generated automatically
+    # also split tile into new line with dot
+    content = re.sub(r'###*( )*(Figure|Table)[ _0-9]* ', '\n.', content)
+    content = re.sub(r'\](Figure|Table)[ _0-9]*', '].', content)
+    return content
+
+
+def convert_image_inline_to_block(content):
+    # Convert inline images to dedicated blocks
+    content = re.sub(r'image:', 'image::', content)
+    return content
+
+
+def remove_bib_numeration(content):
+    if not re.search(r'\[[Bb]ibliography\]', content):
+        content = re.sub(
+            r'== [Bb]ibliography',
+            "[bibliography]\n== Bibliography",
+            content)
+    return content
+
+
+def fix_references(content):
+    # Fixing references requires identifying them correctly first
+    #
+    # There are lines in the beginning that describe the cross-references
+    # that were in the originating word document that are no longer present
+    #
+    # e.g. link:#preamble[1 Preamble link:#preamblelink:#bib11[[11\]]]
+    #
+    # We are to delete these lines for proper document formatting. But before doing so,
+    # we need their content to restore the lost hyper references in the
+    # document
+
+    # First we want to match this informative lines
+    info = re.compile(r'^link:#[_a-zA-Z].*')
+
+    # Then we want to check if a given informative line describes a Figure,
+    # Table or Annex reference
+    misc_refs = re.compile(r'(Figure|Table|Annex) .*')
+
+    # To check if a given informative line describes a chapter/section
+    # reference
+    chapter_refs = re.compile(r'([0-9]*\.)*[0-9]*')
+
+    # We will modify a dictionary dynamically to store content to be replaced
+    replacement_dict = {}
+
+    # Separating the file into lines and loop over them
+    # Might be done in other ways but they have the same space time complexity
+    for line in content.split('\n'):
+
+        # Check if a line is one of the aforementioned informative lines in the
+        # beginning
+        if info.match(line):
+            # If yes, split using ']' and take the first two elements for
+            # values
+            repl, val = line.split('[')[0:2:]
+            # Formatting the right so that html and pdf documents generated
+            # from this file will function properly
+            repl = re.sub(r'\-', '_', repl)
+            repl = re.sub(r'link:#(_)?', '#\\_', repl)
+            # If the informative line describes a reference for an image,
+            # figure, table or annex
+            if misc_refs.match(val):
+                # The value to be replaced has to be brought in proper form
+                val = ' '.join(val.split()[0:2:])
+                val = val.strip(".")
+                # Intuitively, the replacement value has form of an ascii-doc
+                # reference
+                repl = f"<<{repl},{val}>>"
+                # Matching the value directly might result in problems
+                # like matching Figure 45 for the 'Figure 4' part and having
+                # a replacement such as the following
+                # Figure 45 -> <<{reference_for_figure_4},Figure 4>>5
+                #
+                # So we have to match the following pattern to be sure the
+                # expression has ended
+                replacement_dict[val + " "] = repl + " "
+                replacement_dict[val + "."] = repl + "."
+                replacement_dict[val + ","] = repl + ","
+                replacement_dict[val + ")"] = repl + ")"
+                replacement_dict[val + "\n"] = repl + "\n"
+                replacement_dict[val + ";"] = repl + ";"
+                replacement_dict[val + ":"] = repl + ":"
+
+            # If the informative line describes a reference for a chapter or
+            # section
+            elif chapter_refs.match(val):
+
+                # Process is self explanatory analogously to the previous if statement
+                # Only there are more possibilities so more entries
+                val = val.split()[0]
+                repl = f"<<{repl},{val}>>"
+                possible_keys = [
+                    "Subclause ",
+                    "subclause ",
+                    "clause ",
+                    "Clause "]
+                for word in possible_keys:
+                    replacement_dict[word + val +
+                                     " "] = word + repl + " "
+                    replacement_dict[word + val +
+                                     ";"] = word + repl + ":"
+
+                    replacement_dict[word + val +
+                                     ":"] = word + repl + ":"
+
+                    replacement_dict[word + val +
+                                     ")"] = word + repl + ")"
+
+                    replacement_dict[word + val +
+                                     ". "] = word + repl + ". "
+
+                    replacement_dict[word + val +
+                                     "\n"] = word + repl + "\n"
+
+                    replacement_dict[word + val +
+                                     ".\n"] = word + repl + ".\n"
+
+    # Replace the words with references using the dictionary we generated
+    for word, replacement in replacement_dict.items():
+        content = content.replace(word, replacement)
+
+    def inline_refs(match):
+        text = match.group(0)
+        text = [s.strip() for s in text.split('##')]
+        text[0], text[-1] = text[-1], text[0]
+        text = [re.sub(r'\]', ']\n', elem) for elem in text]
+        text = [s.strip() for s in '\n'.join(text).split('\n')]
+        text[1] = re.sub(r'.*(Figure|Table) [ _0-9]* ', '.', text[1])
+        text[1], text[2] = text[2], text[1]
+        text = '\n' + '\n'.join(text) + '\n'
+        return text
+
+    # Some inline references are not even separated from the image description
+    # with a new line. We split them, so all previously inline references have
+    # a uniform structure. We will then transform them and set the ordering.
+    content = re.sub(
+        r'\]\[#_Ref',
+        ']\n[#_Ref',
+        content)
+
+    content = re.sub(
+        r'\]\[#_Toc',
+        ']\n[#_Toc',
+        content)
+
+    # Match when '##image' follows the reference id
+    # This is was originally an inline image
+    # Use the dedicated function to split this line into two lines
+    # Fix the unnecessary characters in the process
+    # Make sure now the reference block follows the image
+    # This may sound counter-intuitive, but everything else has this form
+    # We aim to bring inline references into the same form
+    # The ordering issue is fixed with the following match
+
+    content = re.sub(
+        r'\n(\[#_(Ref|Toc).*\])##image:(.*(\n))',
+        inline_refs,
+        content)
+
+    # Get rid of the long path before the image file, whatever it might be. We
+    # declare the media directory to be ./media within the script.
+    content = re.sub(r'image::(.*)media/', 'image::', content)
+
+    # To fix the breakage with equal signs
+    content = re.sub(r'(=)*( )*image::', 'image::', content)
+
+    return content
+
+
+def fix_tables_with_appendices(content):
+    def split_and_mark(match):
+        text = match.group(0)
+
+        # Match the header block that defines the table cell widths and properties
+        # e.g. [width="100%",cols="21%,17%,22%,40%",options="header",]
+        #
+        # We will use the same block to define the second table, that is the appendix
+        # After having split the table into two
+        table_props_def_block = re.match(r'\[.*\](\n)+', text).group(0)
+        text = re.sub(
+            r'\[.*\](\n)+',
+            f'[.table-with-appendix-table]\n{table_props_def_block}',
+            text)
+
+        # Split from the line 'Inherits from'
+        text = re.sub(
+            r'\n\|Inherits from:.*\|\n',
+            f'\n\n{{filler}}\n\\g<0>|===\n{table_props_def_block}\n|===\n',
+            text)
+        return text
+
+    # Match tables to be split and do due work calling the function
+    # split_and_mark
+    content = re.sub(
+        r'\[.*\](\n)+\|\===\n((\|.*\n)+?)\|Inherits from:.*\|\n',
+        split_and_mark,
+        content)
+
+    return content
+
+
+def remove_toc_and_var(content):
+    # Remove table of contents, table of tables, table of figures, imprint
+    # and similar content at the beginning that are badly formatted, non-necessary,
+    # cause duplication and/or are error prone on another level.
+    content = re.sub(
+        r'\nImprint((\|.*\n)+?)== Preamble',
+        '\n== Preamble',
+        content)
+    return content
+
+
+def add_doc_attr(content):
+    content = ':toc: left\n:toc-title: Contents\n:sectlinks:\n:sectnums:\n:stylesheet: ../../style.css\n:favicon: ../../favicon.png\n:imagesdir: media/\n:nofooter:\n' + content
     return content
