@@ -56,14 +56,14 @@ def replace_text_by_patterns(content):
     content = re.sub(r'&lt;', '<', content)
 
     content = re.sub(r'\]Figure', ']\nFigure', content)
-    
+
     def aga(match):
         text = match.group(0)
         print(text)
         return text
-        
-    #content = re.sub(r'^[^(\[#_)+].*Figure.*$', aga, content, flags=re.MULTILINE)
-    #print(content)
+
+    # content = re.sub(r'^[^(\[#_)+].*Figure.*$', aga, content, flags=re.MULTILINE)
+    # print(content)
     content = re.sub(
         r'_[0-9]_',
         lambda x: x.group(0).replace(
@@ -289,7 +289,7 @@ def fix_references(content):
     # This may sound counter-intuitive, but everything else has this form
     # We aim to bring inline references into the same form
     # The ordering issue is fixed with the following match
-    
+
     content = re.sub(
         r'\n(\[#_(Ref|Toc).*\])##image:(.*(\n))',
         inline_refs,
