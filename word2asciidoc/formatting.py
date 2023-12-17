@@ -365,5 +365,5 @@ def remove_toc_and_var(content):
 
 def add_doc_attr(content):
     content = re.sub(r'^image::.*$', '', content, 1, flags=re.MULTILINE)
-    content = ':toc: left\n:toc-title: Contents\n:sectlinks:\n:sectnums:\n:stylesheet: ../../style.css\n:favicon: ../../favicon.png\n:imagesdir: media/\n:nofooter:\n\ninclude::constraints.adoc[]\n' + content
+    content = ':toc: left\n:toc-title: Contents\n:sectlinks:\n:sectnums:\n:stylesheet: ../../style.css\n:favicon: ../../favicon.png\n:imagesdir: media/\n:nofooter:\n' + content
     return content
