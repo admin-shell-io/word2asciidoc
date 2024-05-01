@@ -14,7 +14,10 @@ logging.basicConfig(level=logging.INFO,
 
 def process_images(directory, content):
     logging.info("Convert the emf images in Asciidoc document to png")
-    images_to_convert = read_emf_images(directory.name + "/media")
+    img_dir = directory.name + "/media"
+    if not pathlib.Path(img_dir).exists():
+        return content
+    images_to_convert = read_emf_images(img_dir)
     for image_name, image_path in images_to_convert:
         try:
             logging.info(f"Convert the emf image: {image_name}")
