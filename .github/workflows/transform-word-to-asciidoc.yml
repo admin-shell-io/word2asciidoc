@@ -59,7 +59,7 @@ jobs:
         fix_adoc --adoc_input output_folder/generated_file.adoc --adoc_output output_folder/index.adoc
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: converted-docs
         path: output_folder
