@@ -18,7 +18,7 @@ def process_images(directory, content):
     if not pathlib.Path(img_dir).exists():
         return content
     images_to_convert = read_emf_images(img_dir)
-    for image_name, image_path in images_to_convert:
+    for image_name, image_path in images_to_convert.items():
         try:
             logging.info(f"Convert the emf image: {image_name}")
             convert_emf_to_png(image_path, image_path.replace(".emf", ".png"))
